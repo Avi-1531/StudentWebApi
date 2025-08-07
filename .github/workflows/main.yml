@@ -67,7 +67,7 @@ jobs:
         if (-Not (Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "HTTP Port 94" })) {
           New-NetFirewallRule -DisplayName "HTTP Port 94" -Direction Inbound -Protocol TCP -LocalPort 94 -Action Allow
         }
-      shell: pwsh
+      
 
 
   
