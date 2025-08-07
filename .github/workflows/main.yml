@@ -1,0 +1,74 @@
+name: cicd pipeline 
+on: 
+  push: 
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore StudentWebApi.sln
+
+    - name: Publish
+      run: dotnet publish StudentWebApi.sln --configuration Release --output ./publish
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: published-app
+        path: ./publish
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+    - name: Download published artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: published-app
+        path: ./publish
+
+    
+
+    - name: Deploy to IIS locally
+      run: |
+        Import-Module WebAdministration
+    
+        if (-Not (Test-Path "C:\inetpub\wwwroot\studentapp")) {
+          New-Item -Path "C:\inetpub\wwwroot\studentapp" -ItemType Directory
+        }
+    
+        Copy-Item -Path "./publish/*" -Destination "C:\inetpub\wwwroot\studentapp" -Recurse -Force
+    
+        if (-Not (Test-Path IIS:\AppPools\app-pool)) {
+          New-WebAppPool -Name "app-pool"
+        }
+    
+        if (-Not (Test-Path IIS:\Sites\studentapp)) {
+          New-Website -Name "studentapp" -Port 94 -PhysicalPath "C:\inetpub\wwwroot\studentapp" -ApplicationPool "app-pool"
+        } else {
+          Restart-WebAppPool -Name "app-pool"
+        }
+    
+        if (-Not (Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "HTTP Port 94" })) {
+          New-NetFirewallRule -DisplayName "HTTP Port 94" -Direction Inbound -Protocol TCP -LocalPort 94 -Action Allow
+        }
+      shell: pwsh
+
+
+  
+    
