@@ -47,6 +47,11 @@ jobs:
     - name: Deploy to IIS locally
       run: |
         Import-Module WebAdministration
+
+        # Stop app pool to release file locks
+        if (Test-Path IIS:\AppPools\app-pool) {
+            Stop-WebAppPool -Name "app-pool"
+        }
     
         if (-Not (Test-Path "C:\inetpub\wwwroot\studentapp")) {
           New-Item -Path "C:\inetpub\wwwroot\studentapp" -ItemType Directory
