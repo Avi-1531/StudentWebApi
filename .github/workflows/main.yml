@@ -58,7 +58,12 @@ jobs:
         }
     
         Copy-Item -Path "./publish/*" -Destination "C:\inetpub\wwwroot\studentapp" -Recurse -Force
-    
+
+        # Start the app pool again
+        if (Test-Path IIS:\AppPools\app-pool) {
+            Start-WebAppPool -Name "app-pool"
+        }
+        
         if (-Not (Test-Path IIS:\AppPools\app-pool)) {
           New-WebAppPool -Name "app-pool"
         }
