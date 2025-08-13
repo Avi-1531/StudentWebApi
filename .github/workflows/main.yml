@@ -48,10 +48,11 @@ jobs:
       run: |
         Import-Module WebAdministration
 
-        # Stop app pool to release file locks
-        if (Test-Path IIS:\AppPools\app-pool) {
-            Stop-WebAppPool -Name "app-pool"
-        }
+        # Check if app pool exists and is started before stopping
+        $appPoolState = (Get-WebAppPoolState -Name "app-pool").Value
+          if ($appPoolState -eq "Started") {
+              Stop-WebAppPool -Name "app-pool"
+          }
     
         if (-Not (Test-Path "C:\inetpub\wwwroot\studentapp")) {
           New-Item -Path "C:\inetpub\wwwroot\studentapp" -ItemType Directory
